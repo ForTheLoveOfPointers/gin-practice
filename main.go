@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"io"
+	"os"
 	"testpkg/ginserver/controller"
 	"testpkg/ginserver/middlewares"
 	"testpkg/ginserver/service"
@@ -13,7 +16,22 @@ var (
 	videoController controller.VideoController = controller.New(videoService)
 )
 
+func setupLogOutput() {
+	file, err := os.Create("gin.log")
+
+	if err != nil {
+		errFmt := fmt.Errorf("ERROR || Unable to create gin.log file --- %w", err)
+		fmt.Println(errFmt)
+		return
+	}
+
+	gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
+
+}
+
 func main() {
+	setupLogOutput()
+
 	server := gin.New()
 	server.Use(gin.Recovery(), middlewares.Logger())
 
