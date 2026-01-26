@@ -20,7 +20,7 @@ func main() {
 	middlewares.SetupLogOutput()
 
 	server := gin.New()
-	server.Use(gin.Recovery(), middlewares.Logger())
+	server.Use(gin.Recovery(), middlewares.Logger(), middlewares.ErrorMiddleware())
 
 	protected := server.Group("/my-account")
 	protected.Use(middlewares.Auth())
