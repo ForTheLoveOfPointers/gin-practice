@@ -6,6 +6,7 @@ import (
 	"os"
 	"testpkg/ginserver/controller"
 	"testpkg/ginserver/middlewares"
+	"testpkg/ginserver/routers"
 	"testpkg/ginserver/service"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,7 @@ func setupLogOutput() {
 	file, err := os.Create("gin.log")
 
 	if err != nil {
-		errFmt := fmt.Errorf("ERROR || Unable to create gin.log file --- %w", err)
+		errFmt := fmt.Errorf("ERROR || Unable to create or access gin.log file --- %w", err)
 		fmt.Println(errFmt)
 		return
 	}
@@ -35,13 +36,11 @@ func main() {
 	server := gin.New()
 	server.Use(gin.Recovery(), middlewares.Logger())
 
-	server.GET("/videos", func(ctx *gin.Context) {
-		ctx.JSON(200, videoController.FindAll())
-	})
-
-	server.POST("/videos", func(ctx *gin.Context) {
-		ctx.JSON(200, videoController.Save(ctx))
-	})
+	protected := server.Group("/my-account")
+	protected.Use(middlewares.Auth())
+	{
+		routers.SetupRouters(protected, &videoController)
+	}
 
 	server.Run(":3000")
 }
