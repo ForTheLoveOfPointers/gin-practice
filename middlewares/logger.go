@@ -2,10 +2,25 @@ package middlewares
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+func SetupLogOutput() {
+	file, err := os.Create("gin.log")
+
+	if err != nil {
+		errFmt := fmt.Errorf("ERROR || Unable to create or access gin.log file --- %w", err)
+		fmt.Println(errFmt)
+		return
+	}
+
+	gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
+
+}
 
 func Logger() gin.HandlerFunc {
 

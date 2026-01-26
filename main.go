@@ -1,9 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"io"
-	"os"
 	"testpkg/ginserver/controller"
 	"testpkg/ginserver/middlewares"
 	"testpkg/ginserver/routers"
@@ -15,23 +12,12 @@ import (
 var (
 	videoService    service.VideoService       = service.New()
 	videoController controller.VideoController = controller.New(videoService)
+	userService     service.UserService        = service.NewUser()
+	userController  controller.UserController  = controller.NewUser(userService)
 )
 
-func setupLogOutput() {
-	file, err := os.Create("gin.log")
-
-	if err != nil {
-		errFmt := fmt.Errorf("ERROR || Unable to create or access gin.log file --- %w", err)
-		fmt.Println(errFmt)
-		return
-	}
-
-	gin.DefaultWriter = io.MultiWriter(file, os.Stdout)
-
-}
-
 func main() {
-	setupLogOutput()
+	middlewares.SetupLogOutput()
 
 	server := gin.New()
 	server.Use(gin.Recovery(), middlewares.Logger())
@@ -39,7 +25,7 @@ func main() {
 	protected := server.Group("/my-account")
 	protected.Use(middlewares.Auth())
 	{
-		routers.SetupRouters(protected, &videoController)
+		routers.SetupRouters(protected, &videoController, &userController)
 	}
 
 	server.Run(":3000")
