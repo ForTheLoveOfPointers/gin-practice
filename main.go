@@ -22,10 +22,14 @@ func main() {
 	server := gin.New()
 	server.Use(gin.Recovery(), middlewares.Logger(), middlewares.ErrorMiddleware())
 
+	nonprotected := server.Group("/basic")
+
+	routers.RegisterUsersRouter(nonprotected, &userController)
+
 	protected := server.Group("/my-account")
 	protected.Use(middlewares.Auth())
 	{
-		routers.SetupRouters(protected, &videoController, &userController)
+		routers.SetupRouters(protected, &videoController)
 	}
 
 	server.Run(":3000")
