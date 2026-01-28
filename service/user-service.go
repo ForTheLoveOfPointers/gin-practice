@@ -2,11 +2,11 @@ package service
 
 import (
 	"fmt"
-	"slices"
 	"testpkg/ginserver/entity"
 	servererrors "testpkg/ginserver/server_errors"
 
 	"github.com/golang-jwt/jwt/v5"
+	"gorm.io/gorm"
 )
 
 type UserService interface {
@@ -15,7 +15,7 @@ type UserService interface {
 }
 
 type userService struct {
-	users []entity.User
+	db *gorm.DB
 }
 
 func NewUser() *userService {
@@ -23,20 +23,23 @@ func NewUser() *userService {
 }
 
 func (e *userService) Register(usr entity.User) entity.User {
-	e.users = append(e.users, usr)
+	e.db.Create(usr)
 	return usr
 }
 
 func (e *userService) Login(usr entity.User) (string, error) {
-	if !slices.Contains(e.users, usr) {
+	var userEnt entity.User
+	result := e.db.First(&userEnt, usr.Id)
+
+	if result.Error != nil {
 		err := servererrors.RequestError{Code: 404, Message: "User not in database"}
 		return "", &err
 	}
-	fmt.Println(usr)
+
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
-			"name":  usr.Name,
-			"email": usr.Email,
+			"name":  userEnt.Name,
+			"email": userEnt.Email,
 		},
 	)
 

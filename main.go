@@ -1,22 +1,32 @@
 package main
 
 import (
-	"testpkg/ginserver/controller"
+	"database/sql"
+	"log"
+	"testpkg/ginserver/db"
 	"testpkg/ginserver/middlewares"
 	"testpkg/ginserver/routers"
-	"testpkg/ginserver/service"
 
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 )
 
-var (
-	videoService    service.VideoService       = service.New()
-	videoController controller.VideoController = controller.New(videoService)
-	userService     service.UserService        = service.NewUser()
-	userController  controller.UserController  = controller.NewUser(userService)
-)
+func setupTable(db *sql.DB) {
+	_, err := db.Exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT);")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+}
 
 func main() {
+	db_gorm, err := db.Connect()
+
+	if err != nil {
+		panic("Failed to connect to the database")
+	}
+
 	middlewares.SetupLogOutput()
 
 	server := gin.New()
@@ -24,12 +34,13 @@ func main() {
 
 	nonprotected := server.Group("/basic")
 
-	routers.RegisterUsersRouter(nonprotected, &userController)
+	routers.SetupPublicRouters(nonprotected)
 
 	protected := server.Group("/my-account")
 	protected.Use(middlewares.Auth())
 	{
-		routers.SetupRouters(protected, &videoController)
+
+		routers.SetupPrivateRouters(protected)
 	}
 
 	server.Run(":3000")
