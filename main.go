@@ -35,11 +35,11 @@ func main() {
 	server := gin.New()
 	server.Use(gin.Recovery(), middlewares.Logger(), middlewares.ErrorMiddleware())
 
-	nonprotected := server.Group("/basic")
+	nonprotected := server.Group("")
 
 	routers.SetupPublicRouters(nonprotected, db_gorm)
 
-	protected := server.Group("/my-account")
+	protected := server.Group("")
 	protected.Use(middlewares.Auth())
 	{
 

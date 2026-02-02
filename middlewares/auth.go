@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -18,7 +19,7 @@ func Auth() gin.HandlerFunc {
 		}
 
 		token, err := jwt.Parse(tokenString, func(t *jwt.Token) (any, error) {
-			return []byte("MYSECRET"), nil
+			return []byte(os.Getenv("JWT_SECRET")), nil
 		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
 
 		if err != nil {

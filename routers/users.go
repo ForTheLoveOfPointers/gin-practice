@@ -10,14 +10,14 @@ func RegisterUsersRouter(rg *gin.RouterGroup, userController *controller.UserCon
 	users := rg.Group("/users")
 
 	users.POST("/register", func(ctx *gin.Context) {
-		usr, err := (*userController).Register(ctx)
+		token, err := (*userController).Register(ctx)
 
 		if err != nil {
 			ctx.Error(err)
 			return
 		}
 
-		ctx.JSON(200, usr)
+		ctx.JSON(200, gin.H{"token": token})
 	})
 
 	users.POST("/login", func(ctx *gin.Context) {

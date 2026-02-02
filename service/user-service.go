@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	"os"
 	"testpkg/ginserver/entity"
 	servererrors "testpkg/ginserver/server_errors"
 
@@ -10,7 +11,7 @@ import (
 )
 
 type UserService interface {
-	Register(entity.User) (entity.User, error)
+	Register(entity.User) (string, error)
 	Login(entity.User) (string, error)
 }
 
@@ -18,17 +19,34 @@ type userService struct {
 	db *gorm.DB
 }
 
+func signToken(claims jwt.MapClaims) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
+		claims,
+	)
+
+	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+}
+
 func NewUser(db *gorm.DB) *userService {
 	return &userService{db}
 }
 
-func (e *userService) Register(usr entity.User) (entity.User, error) {
+func (e *userService) Register(usr entity.User) (string, error) {
 	result := e.db.Create(&usr)
 	if result.Error != nil {
 		err := servererrors.RequestError{Code: 500, Message: "Error registering user"}
-		return usr, &err
+		return "", &err
 	}
-	return usr, nil
+	token_string, err := signToken(jwt.MapClaims{
+		"email": usr.Email,
+		"name":  usr.Name,
+	})
+
+	if err != nil {
+		return "", &servererrors.RequestError{Code: 500, Message: "Failed at jwt signing"}
+	}
+
+	return token_string, nil
 }
 
 func (e *userService) Login(usr entity.User) (string, error) {
@@ -40,14 +58,11 @@ func (e *userService) Login(usr entity.User) (string, error) {
 		return "", &err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
-		jwt.MapClaims{
-			"name":  userEnt.Name,
-			"email": userEnt.Email,
-		},
-	)
+	token_string, err := signToken(jwt.MapClaims{
+		"name":  userEnt.Name,
+		"email": userEnt.Email,
+	})
 
-	token_string, err := token.SignedString([]byte("MYSECRET"))
 	if err != nil {
 		return "", &servererrors.RequestError{Code: 500, Message: "Failed at jwt signing"}
 	}
