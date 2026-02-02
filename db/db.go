@@ -10,8 +10,7 @@ import (
 func Connect() (*gorm.DB, error) {
 	dbName := os.Getenv("DATABASE")
 	if dbName == "" {
-		dbName = "dev-db-gingonic"
+		dbName = "./test.db"
 	}
-
 	return gorm.Open(sqlite.Open(dbName), &gorm.Config{})
 }

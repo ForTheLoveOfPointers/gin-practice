@@ -10,7 +10,7 @@ import (
 )
 
 type UserService interface {
-	Register(entity.User) entity.User
+	Register(entity.User) (entity.User, error)
 	Login(entity.User) (string, error)
 }
 
@@ -18,21 +18,25 @@ type userService struct {
 	db *gorm.DB
 }
 
-func NewUser() *userService {
-	return &userService{}
+func NewUser(db *gorm.DB) *userService {
+	return &userService{db}
 }
 
-func (e *userService) Register(usr entity.User) entity.User {
-	e.db.Create(usr)
-	return usr
+func (e *userService) Register(usr entity.User) (entity.User, error) {
+	result := e.db.Create(&usr)
+	if result.Error != nil {
+		err := servererrors.RequestError{Code: 500, Message: "Error registering user"}
+		return usr, &err
+	}
+	return usr, nil
 }
 
 func (e *userService) Login(usr entity.User) (string, error) {
 	var userEnt entity.User
-	result := e.db.First(&userEnt, usr.Id)
+	result := e.db.Where("email = ?", usr.Email).First(&userEnt)
 
 	if result.Error != nil {
-		err := servererrors.RequestError{Code: 404, Message: "User not in database"}
+		err := servererrors.RequestError{Code: 500, Message: "User unable to login"}
 		return "", &err
 	}
 

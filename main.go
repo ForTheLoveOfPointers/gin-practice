@@ -1,32 +1,35 @@
 package main
 
 import (
-	"database/sql"
-	"log"
 	"testpkg/ginserver/db"
+	"testpkg/ginserver/entity"
 	"testpkg/ginserver/middlewares"
 	"testpkg/ginserver/routers"
 
 	"github.com/gin-gonic/gin"
-	_ "github.com/mattn/go-sqlite3"
 )
 
-func setupTable(db *sql.DB) {
-	_, err := db.Exec("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, name TEXT);")
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-}
-
 func main() {
+	/*
+		DB setup
+	*/
 	db_gorm, err := db.Connect()
 
 	if err != nil {
 		panic("Failed to connect to the database")
 	}
 
+	sqlDB, err := db_gorm.DB()
+	if err != nil {
+		panic(err.Error())
+	}
+	defer sqlDB.Close()
+
+	db_gorm.AutoMigrate(&entity.User{})
+
+	/*
+		Endpoint setup
+	*/
 	middlewares.SetupLogOutput()
 
 	server := gin.New()
@@ -34,7 +37,7 @@ func main() {
 
 	nonprotected := server.Group("/basic")
 
-	routers.SetupPublicRouters(nonprotected)
+	routers.SetupPublicRouters(nonprotected, db_gorm)
 
 	protected := server.Group("/my-account")
 	protected.Use(middlewares.Auth())

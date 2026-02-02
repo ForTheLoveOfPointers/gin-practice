@@ -8,7 +8,7 @@ import (
 )
 
 type UserController interface {
-	Register(*gin.Context) entity.User
+	Register(*gin.Context) (entity.User, error)
 	Login(*gin.Context) (string, error)
 }
 
@@ -22,7 +22,7 @@ func NewUser(service service.UserService) UserController {
 	}
 }
 
-func (c *userController) Register(ctx *gin.Context) entity.User {
+func (c *userController) Register(ctx *gin.Context) (entity.User, error) {
 	var user entity.User
 	ctx.BindJSON(&user)
 	return c.service.Register(user)
